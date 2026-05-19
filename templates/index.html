@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>โปเต้มาเเล้วครับผม | Weather Classification AI</title>
+    <meta name="description" content=" YOLO Weather Classification - ระบบจำแนกสภาพอากาศอัจฉริยะด้วยภาพถ่าย ค้นหาสัญญาณลมฟ้าอากาศได้อย่างแม่นยำด้วยโมเดล โปเต้มาแล้วครับผม โปเต้">
+    <meta name="keywords" content="โปเต้มาแล้วครับผม, Weather Classification, AI, Image Processing, Static Site">
+
+<title>SkyLens — Weather Vision AI</title>
+<!-- ใช้ฟอนต์แนวโมเดิร์นสปอร์ตสไตล์ Nike (Archivo, Inter) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── Nike-Inspired Minimal Base ───────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #000000;
+  --surface:  #111111;
+  --border:   #222222;
+  --text:     #ffffff;
+  --muted:    #707072;
+  --accent:   #4ade80; /* สีเขียวสดสะท้อนแสงสไตล์สปอร์ตไอที */
+
+  /* Weather specific muted status tones */
+  --rain:     #38bdf8;
+  --sunrise:  #fb923c;
+  --cloudy:   #94a3b8;
+  --shine:    #facc15;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+.container {
+  max-width: 640px; /* บีบหน้าจอให้คลีน สมมาตร ดูพรีเมียมขึ้น */
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+}
+
+/* ─── Nike Style Typography Header ─────────────────────────────────── */
+header {
+  text-align: left; /* เปลี่ยนจากกึ่งกลางเป็นชิดซ้าย เพิ่มความเฉี่ยวแบบแมกกาซีน */
+  margin-bottom: 4rem;
+  position: relative;
+}
+
+h1 {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.tagline {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+
+.status-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  padding: 0.4rem 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.status-badge.ok { color: var(--accent); }
+.status-badge.fail { color: #f87171; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* ─── Upload Area (Clean & Bold Box) ───────────────────────────────── */
+.upload-section {
+  margin-bottom: 3rem;
+}
+
+.drop-zone {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 0px; /* ทรงเหลี่ยมเรียบหรูแบบกล่องสินค้าพรีเมียม */
+  padding: 4rem 2rem;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: #555555;
+  background: #161616;
+}
+
+.drop-icon {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.drop-zone h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.01em;
+}
+.drop-zone p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Nike Action Button */
+.btn-upload {
+  display: inline-block;
+  padding: 0.9rem 2rem;
+  background: var(--text);
+  border: none;
+  border-radius: 30px; /* ทรงมนสุดคลาสสิกของปุ่มจิ้มในแอป Nike */
+  color: var(--bg);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.1s, opacity 0.2s;
+  text-transform: uppercase;
+}
+.btn-upload:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+.btn-upload:active {
+  transform: scale(0.98);
+}
+
+#file-input { display: none; }
+
+/* ─── Preview Panel ────────────────────────────────────────────────── */
+.preview-strip {
+  display: none;
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  gap: 1.5rem;
+  align-items: center;
+}
+.preview-strip.visible { display: flex; }
+
+.preview-thumb {
+  width: 80px; height: 80px;
+  object-fit: cover;
+  border-radius: 0px;
+}
+
+.preview-info { flex: 1; }
+.preview-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 0.2rem;
+  word-break: break-all;
+}
+.preview-size { font-size: 0.8rem; color: var(--muted); margin-bottom: 1rem; }
+
+.btn-analyze {
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 20px;
+  color: var(--bg);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-analyze:hover { opacity: 0.9; }
+.btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ─── Loading Overlay ────────────────────────────────────────────────── */
+.loading-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 1rem;
+}
+.loading-overlay.active { display: flex; }
+
+.spinner {
+  width: 40px; height: 40px;
+  border: 2px solid var(--border);
+  border-top-color: var(--text);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+/* ─── Typography & Structure Results ───────────────────────────────── */
+.result-section {
+  display: none;
+  margin-top: 2rem;
+}
+.result-section.visible { display: block; }
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 2.5rem;
+}
+
+.result-header {
+  display: flex;
+  flex-direction: column; /* เรียงแบบแมกกาซีนซ้อนบนล่าง */
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+
+.result-img {
+  width: 100%; height: 200px; /* ขยายภาพเต็มตาแบบ Banner */
+  object-fit: cover;
+}
+
+.result-main { position: relative; }
+.result-icon { font-size: 1.5rem; margin-bottom: 0.5rem; display: block; }
+
+.result-label {
+  font-family: 'Archivo Narrow', sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+.result-desc { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.5; }
+.result-conf {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ─── Clean Data Grid ──────────────────────────────────────────────── */
+.prob-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+.prob-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.prob-name { font-size: 0.85rem; color: var(--muted); }
+.prob-name.top { color: var(--text); font-weight: 600; }
+
+.prob-track {
+  height: 2px; /* เส้นความก้าวหน้าบางๆ สไตล์ Minimal */
+  background: var(--border);
+}
+.prob-fill {
+  height: 100%;
+  background: var(--muted);
+  width: 0%;
+  transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+}
+
+.prob-pct {
+  font-size: 0.85rem;
+  text-align: right;
+  color: var(--muted);
+}
+.prob-pct.top { color: var(--text); font-weight: 600; }
+
+.btn-reset {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 2rem;
+  text-transform: uppercase;
+  transition: background 0.2s;
+}
+.btn-reset:hover { background: #1a1a1a; }
+
+.error-box {
+  display: none;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #110808;
+  border: 1px solid #3a1a1a;
+  color: #ff6b6b;
+  font-size: 0.85rem;
+}
+.error-box.visible { display: block; }
+
+/* ─── Footer ────────────────────────────────────────────────────────── */
+footer {
+  margin-top: 6rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+footer span { color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text">Analyzing sky conditions</div>
+</div>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <h1>SkyLens</h1>
+    <div class="tagline">Weather Vision Intelligence</div>
+    <div id="statusBadge" class="status-badge ok">
+      <span class="status-dot"></span>
+      <span id="statusText">CONNECTING</span>
+    </div>
+  </header>
+
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <!-- แก้ไขจุดบกพร่อง: ผูกฟังก์ชันจำลองคลิกเข้ากับกรอบ Drop-zone ทั้งหมดเพื่อความง่าย และซ่อมตัวเลือกปุ่มภายใน -->
+    <div class="drop-zone" id="dropZone">
+      <span class="drop-icon">🌤️</span>
+      <h3>Drop Sky Image Here</h3>
+      <p>Select a clear view photo to predict</p>
+      <button class="btn-upload" id="dummyBtn">
+        Browse Files
+      </button>
+      <input type="file" id="file-input" accept="image/*" capture="environment">
+    </div>
+
+    <!-- Preview Strip -->
+    <div class="preview-strip" id="previewStrip">
+      <img class="preview-thumb" id="previewThumb" src="" alt="Preview">
+      <div class="preview-info">
+        <div class="preview-name" id="previewName"></div>
+        <div class="preview-size" id="previewSize"></div>
+        <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">
+          Run Prediction
+        </button>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <!-- Result Section -->
+  <div class="result-section" id="resultSection">
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <img class="result-img" id="resultImg" src="" alt="Sky Data Grid">
+        <div class="result-main">
+          <span class="result-icon" id="resultIcon"></span>
+          <div class="result-label" id="resultLabel"></div>
+          <div class="result-desc" id="resultDesc"></div>
+          <div class="result-conf" id="resultConf"></div>
+        </div>
+      </div>
+
+      <div class="prob-title">Signal Breakdown</div>
+      <div id="probBars"></div>
+
+      <button class="btn-reset" onclick="reset()">Scan New Image</button>
+    </div>
+  </div>
+
+  <footer>
+    Core architecture powered by <span>YOLO </span>.<br>
+    Classes of target elements: Rain · Sunrise · Cloudy · Shine
+  </footer>
+</div>
+
+<script>
+// ─── Status check ────────────────────────────────────────────────────────────
+const badge   = document.getElementById('statusBadge');
+const badgeTxt = document.getElementById('statusText');
+
+fetch('/status').then(r=>r.json()).then(d=>{
+  if (d.model_loaded) {
+    badgeTxt.textContent = `ONLINE // ${d.device?.toUpperCase()}`;
+  } else {
+    badge.className = 'status-badge fail';
+    badgeTxt.textContent = 'OFFLINE';
+  }
+}).catch(()=>{
+  badge.className = 'status-badge fail';
+  badgeTxt.textContent = 'SERVER ERR';
+});
+
+// ─── Fix Upload Bug & Event Handlers ─────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('file-input');
+const dummyBtn = document.getElementById('dummyBtn');
+let selectedFile = null;
+
+// แก้ไขบั๊กกดปุ่มเลือกรูปภาพไม่ได้: ผูกตัว Trigger ไปที่ input file โดยตรงเมื่อกดกล่องหรือปุ่ม
+dropZone.addEventListener('click', (e) => {
+  // ป้องกันการยิงซ้ำซ้อนถ้าคลิกตรงปุ่มพอดี
+  if(e.target !== fileInput) {
+    fileInput.click();
+  }
+});
+
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => {
+  ev.preventDefault(); dropZone.classList.add('drag-over');
+}));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => {
+  ev.preventDefault(); dropZone.classList.remove('drag-over');
+}));
+dropZone.addEventListener('drop', ev => {
+  ev.preventDefault();
+  const files = ev.dataTransfer.files;
+  if (files[0]) handleFile(files[0]);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+});
+
+function handleFile(file) {
+  if (!file.type.startsWith('image/')) { showError('Please upload an image file.'); return; }
+  selectedFile = file;
+  hideError();
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('previewThumb').src = e.target.result;
+    document.getElementById('previewName').textContent = file.name;
+    document.getElementById('previewSize').textContent = (file.size/1024).toFixed(1) + ' KB';
+    document.getElementById('previewStrip').classList.add('visible');
+    document.getElementById('resultSection').classList.remove('visible');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── Analyze Execution ─────────────────────────────────────────────────────────
+const COLOR_MAP = {
+  rain:    'var(--rain)',
+  sunrise: 'var(--sunrise)',
+  cloudy:  'var(--cloudy)',
+  shine:   'var(--shine)',
+};
+
+async function analyze() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  document.getElementById('loadingOverlay').classList.add('active');
+  hideError();
+
+  const form = new FormData();
+  form.append('image', selectedFile);
+
+  try {
+    const res  = await fetch('/predict', { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    showResult(data);
+  } catch (err) {
+    showError('Prediction failed: ' + err.message);
+  } finally {
+    document.getElementById('loadingOverlay').classList.remove('active');
+    btn.disabled = false;
+  }
+}
+
+function showResult(data) {
+  const p = data.prediction;
+  const color = COLOR_MAP[p.class] || 'var(--accent)';
+
+  document.getElementById('resultImg').src   = data.thumbnail;
+  document.getElementById('resultIcon').textContent  = p.icon;
+  document.getElementById('resultLabel').textContent = p.label.toUpperCase();
+  document.getElementById('resultDesc').textContent  = p.desc;
+  document.getElementById('resultConf').textContent  =
+    `// ACCURACY RATIO: ${(p.probability * 100).toFixed(1)}%`;
+
+  // Probability bars
+  const barsEl = document.getElementById('probBars');
+  barsEl.innerHTML = '';
+  data.all.forEach((item, i) => {
+    const isTop = i === 0;
+    const pct   = (item.probability * 100).toFixed(1);
+    const row   = document.createElement('div');
+    row.className = 'prob-row';
+    row.innerHTML = `
+      <div class="prob-name ${isTop?'top':''}">${item.icon} ${item.label}</div>
+      <div class="prob-track">
+        <div class="prob-fill" style="background:${isTop ? color : 'var(--border)'};"
+             data-w="${pct}"></div>
+      </div>
+      <div class="prob-pct ${isTop?'top':''}">${pct}%</div>
+    `;
+    barsEl.appendChild(row);
+  });
+
+  // Animate progress indicators
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    barsEl.querySelectorAll('.prob-fill').forEach(el => {
+      el.style.width = el.dataset.w + '%';
+    });
+  }));
+
+  document.getElementById('resultSection').classList.add('visible');
+  document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function reset() {
+  selectedFile = null;
+  document.getElementById('previewStrip').classList.remove('visible');
+  document.getElementById('resultSection').classList.remove('visible');
+  document.getElementById('file-input').value = '';
+  hideError();
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+function hideError() {
+  document.getElementById('errorBox').classList.remove('visible');
+}
+</script>
+</body>
+</html>
