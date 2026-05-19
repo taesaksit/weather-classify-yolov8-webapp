@@ -90,5 +90,5 @@ def status():
 
 if __name__ == '__main__':
     # ระบบจะดึงค่า PORT จาก Render มาใช้รันอัตโนมัติ ถ้ารันในเครื่องตัวเองจะใช้พอร์ต 5000
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=False) # แนะนำให้ปิด debug=True เมื่อขึ้น Production
+    port = int(os.environ.get("PORT", 5010))
+    app.run(host='0.0.0.0', port=port, debug=True) # แนะนำให้ปิด debug=True เมื่อขึ้น Production
