@@ -4,33 +4,42 @@ from PIL import Image
 import io
 import base64
 import os
+
 app = Flask(__name__)
 
 # ─── Config ───────────────────────────────────────────────────────────────────
 MODEL_PATH = 'best_model.pt'
 
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp', 'bmp', 'heic', 'heif'}
+
 CLASS_META = {
-    'rain':    {'icon': '🌧️', 'label': 'Rain',    'desc': 'Rainy conditions detected',  'color': '#4fc3f7'},
-    'sunrise': {'icon': '🌅', 'label': 'Sunrise',  'desc': 'Beautiful sunrise sky',       'color': '#ffb74d'},
-    'cloudy':  {'icon': '☁️', 'label': 'Cloudy',   'desc': 'Overcast cloudy sky',         'color': '#b0bec5'},
-    'shine':   {'icon': '☀️', 'label': 'Sunshine', 'desc': 'Clear sunny weather',         'color': '#fff176'},
+    'rain':    {'icon': '🌧️', 'label': 'Rain',     'desc': 'Rainy conditions detected',  'color': '#4fc3f7'},
+    'sunrise': {'icon': '🌅', 'label': 'Sunrise',   'desc': 'Beautiful sunrise sky',      'color': '#ffb74d'},
+    'cloudy':  {'icon': '☁️', 'label': 'Cloudy',    'desc': 'Overcast cloudy sky',        'color': '#b0bec5'},
+    'shine':   {'icon': '☀️', 'label': 'Sunshine',  'desc': 'Clear sunny weather',        'color': '#fff176'},
 }
 
 # ─── Model Loading ─────────────────────────────────────────────────────────────
-model = None
+model        = None
 model_loaded = False
-model_error = None
+model_error  = None
 
 try:
-    model = YOLO(MODEL_PATH)  # ultralytics handles device automatically
+    model        = YOLO(MODEL_PATH)
     model_loaded = True
 except Exception as e:
     model_error = str(e)
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+def allowed_file(filename: str) -> bool:
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # ─── Routes ────────────────────────────────────────────────────────────────────
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -41,16 +50,21 @@ def predict():
         return jsonify({'error': 'No image provided'}), 400
 
     file = request.files['image']
+
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
 
-    try:
-        img = Image.open(io.BytesIO(file.read())).convert('RGB') # ไม่ต้อง save รูปลง disk
+    # ─── FIX: ตรวจ extension ก่อน เพื่อป้องกัน "did not match expected pattern" ─
+    if not allowed_file(file.filename):
+        return jsonify({'error': 'Unsupported file type. Please upload JPG, PNG, or WebP.'}), 400
 
-        # YOLO classify inference
+    try:
+        img_bytes = file.read()
+        img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+
         results = model(img, verbose=False)
-        probs   = results[0].probs          # ultralytics Probs object
-        names   = results[0].names          # {0: 'cloudy', 1: 'rain', ...}
+        probs   = results[0].probs
+        names   = results[0].names
 
         all_results = []
         for idx, conf in enumerate(probs.data.tolist()):
@@ -64,10 +78,11 @@ def predict():
         all_results.sort(key=lambda x: x['probability'], reverse=True)
 
         # Thumbnail
-        thumb = img.resize((300, 300))
-        buf   = io.BytesIO()
+        thumb = img.copy()
+        thumb.thumbnail((300, 300))          # thumbnail รักษา aspect ratio ไว้
+        buf = io.BytesIO()
         thumb.save(buf, format='JPEG', quality=85)
-        b64   = base64.b64encode(buf.getvalue()).decode()
+        b64 = base64.b64encode(buf.getvalue()).decode()
 
         return jsonify({
             'prediction': all_results[0],
@@ -78,9 +93,16 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 @app.route('/status')
 def status():
-    device = str(next(model.model.parameters()).device) if model_loaded else None
+    device = None
+    if model_loaded:
+        try:
+            device = str(next(model.model.parameters()).device)
+        except Exception:
+            device = 'unknown'
+
     return jsonify({
         'model_loaded': model_loaded,
         'device':       device,
@@ -88,7 +110,9 @@ def status():
         'error':        model_error
     })
 
+
 if __name__ == '__main__':
-    # ระบบจะดึงค่า PORT จาก Render มาใช้รันอัตโนมัติ ถ้ารันในเครื่องตัวเองจะใช้พอร์ต 5000
-    port = int(os.environ.get("PORT", 5010))
-    app.run(host='0.0.0.0', port=port, debug=True) # แนะนำให้ปิด debug=True เมื่อขึ้น Production
+    port  = int(os.environ.get('PORT', 5010))
+    # debug ปิดเมื่อ PORT ถูก set จาก environment (= production)
+    debug = os.environ.get('PORT') is None
+    app.run(host='0.0.0.0', port=port, debug=debug)

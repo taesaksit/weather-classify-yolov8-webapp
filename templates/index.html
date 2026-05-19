@@ -3,17 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>โปเต้มาเเล้วครับผม | Weather Classification AI</title>
-    <meta name="description" content=" YOLO Weather Classification - ระบบจำแนกสภาพอากาศอัจฉริยะด้วยภาพถ่าย ค้นหาสัญญาณลมฟ้าอากาศได้อย่างแม่นยำด้วยโมเดล โปเต้มาแล้วครับผม โปเต้">
-    <meta name="keywords" content="โปเต้มาแล้วครับผม, Weather Classification, AI, Image Processing, Static Site">
-
 <title>SkyLens — Weather Vision AI</title>
-<!-- ใช้ฟอนต์แนวโมเดิร์นสปอร์ตสไตล์ Nike (Archivo, Inter) -->
+<meta name="description" content="YOLO Weather Classification - ระบบจำแนกสภาพอากาศอัจฉริยะด้วยภาพถ่าย">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-/* ─── Nike-Inspired Minimal Base ───────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -22,9 +17,7 @@
   --border:   #222222;
   --text:     #ffffff;
   --muted:    #707072;
-  --accent:   #4ade80; /* สีเขียวสดสะท้อนแสงสไตล์สปอร์ตไอที */
-
-  /* Weather specific muted status tones */
+  --accent:   #4ade80;
   --rain:     #38bdf8;
   --sunrise:  #fb923c;
   --cloudy:   #94a3b8;
@@ -42,14 +35,13 @@ body {
 }
 
 .container {
-  max-width: 640px; /* บีบหน้าจอให้คลีน สมมาตร ดูพรีเมียมขึ้น */
+  max-width: 640px;
   margin: 0 auto;
   padding: 4rem 1.5rem;
 }
 
-/* ─── Nike Style Typography Header ─────────────────────────────────── */
 header {
-  text-align: left; /* เปลี่ยนจากกึ่งกลางเป็นชิดซ้าย เพิ่มความเฉี่ยวแบบแมกกาซีน */
+  text-align: left;
   margin-bottom: 4rem;
   position: relative;
 }
@@ -91,21 +83,26 @@ h1 {
 .status-badge.fail { color: #f87171; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-/* ─── Upload Area (Clean & Bold Box) ───────────────────────────────── */
-.upload-section {
-  margin-bottom: 3rem;
+.upload-section { margin-bottom: 3rem; }
+
+/* ─── FIX: ใช้ label ครอบทั้งกล่อง แทนการ .click() ด้วย JS ──────── */
+.drop-label {
+  display: block;       /* label เป็น block เพื่อครอบทั้ง drop-zone */
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent; /* กำจัด flash สีฟ้าบนมือถือ */
 }
 
 .drop-zone {
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 0px; /* ทรงเหลี่ยมเรียบหรูแบบกล่องสินค้าพรีเมียม */
+  border-radius: 0px;
   padding: 4rem 2rem;
   text-align: center;
   transition: all 0.2s ease;
-  cursor: pointer;
+  /* ไม่ต้องใส่ cursor: pointer ที่นี่อีก เพราะ label จัดการแล้ว */
 }
-.drop-zone:hover, .drop-zone.drag-over {
+.drop-label:hover .drop-zone,
+.drop-zone.drag-over {
   border-color: #555555;
   background: #161616;
 }
@@ -128,13 +125,12 @@ h1 {
   margin-bottom: 1.5rem;
 }
 
-/* Nike Action Button */
 .btn-upload {
   display: inline-block;
   padding: 0.9rem 2rem;
   background: var(--text);
   border: none;
-  border-radius: 30px; /* ทรงมนสุดคลาสสิกของปุ่มจิ้มในแอป Nike */
+  border-radius: 30px;
   color: var(--bg);
   font-size: 0.8rem;
   font-weight: 600;
@@ -142,18 +138,25 @@ h1 {
   cursor: pointer;
   transition: transform 0.1s, opacity 0.2s;
   text-transform: uppercase;
+  
 }
-.btn-upload:hover {
+.drop-label:hover .btn-upload {
   opacity: 0.9;
-  transform: scale(1.02);
 }
-.btn-upload:active {
+.drop-label:active .btn-upload {
   transform: scale(0.98);
 }
 
-#file-input { display: none; }
+/* ─── FIX: ซ่อน input แต่ยังคง accessible ────────────────────────── */
+#file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  /* ไม่ใช้ display:none เพราะบาง browser จะบล็อค programmatic trigger */
+}
 
-/* ─── Preview Panel ────────────────────────────────────────────────── */
 .preview-strip {
   display: none;
   margin-top: 1.5rem;
@@ -169,9 +172,10 @@ h1 {
   width: 80px; height: 80px;
   object-fit: cover;
   border-radius: 0px;
+  flex-shrink: 0;
 }
 
-.preview-info { flex: 1; }
+.preview-info { flex: 1; min-width: 0; }
 .preview-name {
   font-size: 0.85rem;
   font-weight: 600;
@@ -190,11 +194,11 @@ h1 {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-analyze:hover { opacity: 0.9; }
 .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; }
 
-/* ─── Loading Overlay ────────────────────────────────────────────────── */
 .loading-overlay {
   display: none;
   position: fixed; inset: 0; z-index: 100;
@@ -221,7 +225,6 @@ h1 {
   text-transform: uppercase;
 }
 
-/* ─── Typography & Structure Results ───────────────────────────────── */
 .result-section {
   display: none;
   margin-top: 2rem;
@@ -236,13 +239,13 @@ h1 {
 
 .result-header {
   display: flex;
-  flex-direction: column; /* เรียงแบบแมกกาซีนซ้อนบนล่าง */
+  flex-direction: column;
   gap: 1.5rem;
   margin-bottom: 2.5rem;
 }
 
 .result-img {
-  width: 100%; height: 200px; /* ขยายภาพเต็มตาแบบ Banner */
+  width: 100%; height: 200px;
   object-fit: cover;
 }
 
@@ -265,7 +268,6 @@ h1 {
   color: var(--accent);
 }
 
-/* ─── Clean Data Grid ──────────────────────────────────────────────── */
 .prob-title {
   font-size: 0.75rem;
   font-weight: 600;
@@ -288,7 +290,7 @@ h1 {
 .prob-name.top { color: var(--text); font-weight: 600; }
 
 .prob-track {
-  height: 2px; /* เส้นความก้าวหน้าบางๆ สไตล์ Minimal */
+  height: 2px;
   background: var(--border);
 }
 .prob-fill {
@@ -316,6 +318,7 @@ h1 {
   margin-top: 2rem;
   text-transform: uppercase;
   transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
 .btn-reset:hover { background: #1a1a1a; }
 
@@ -330,7 +333,6 @@ h1 {
 }
 .error-box.visible { display: block; }
 
-/* ─── Footer ────────────────────────────────────────────────────────── */
 footer {
   margin-top: 6rem;
   padding-top: 1.5rem;
@@ -344,14 +346,12 @@ footer span { color: var(--text); }
 </head>
 <body>
 
-<!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
   <div class="loading-text">Analyzing sky conditions</div>
 </div>
 
 <div class="container">
-  <!-- Header -->
   <header>
     <h1>SkyLens</h1>
     <div class="tagline">Weather Vision Intelligence</div>
@@ -361,20 +361,29 @@ footer span { color: var(--text); }
     </div>
   </header>
 
-  <!-- Upload Section -->
   <div class="upload-section">
-    <!-- แก้ไขจุดบกพร่อง: ผูกฟังก์ชันจำลองคลิกเข้ากับกรอบ Drop-zone ทั้งหมดเพื่อความง่าย และซ่อมตัวเลือกปุ่มภายใน -->
-    <div class="drop-zone" id="dropZone">
-      <span class="drop-icon">🌤️</span>
-      <h3>Drop Sky Image Here</h3>
-      <p>Select a clear view photo to predict</p>
-      <button class="btn-upload" id="dummyBtn">
-        Browse Files
-      </button>
-      <input type="file" id="file-input" accept="image/*" capture="environment">
-    </div>
+    <!--
+      FIX หลัก: ใช้ <label for="file-input"> ครอบทั้งกล่อง
+      วิธีนี้เป็น native browser behavior — ทุก platform รองรับ
+      ไม่ต้องใช้ JS .click() เลย จึงไม่มีปัญหา trusted event บนมือถือ
+    -->
+    <label class="drop-label" for="file-input">
+      <div class="drop-zone" id="dropZone">
+        <span class="drop-icon">🌤️</span>
+        <h3>Drop Sky Image Here</h3>
+        <p>Select a clear view photo to predict</p>
+        <span class="btn-upload">Browse Files</span>
+      </div>
+    </label>
 
-    <!-- Preview Strip -->
+    <!--
+      FIX: ลบ capture="environment" ออก
+      capture="environment" บังคับเปิดกล้องอย่างเดียวบน iOS/Android
+      ทำให้ผู้ใช้ไม่สามารถเลือกรูปจาก gallery ได้
+      ถ้าต้องการให้เลือกได้ทั้งกล้องและ gallery ไม่ต้องใส่ capture เลย
+    -->
+    <input type="file" id="file-input" accept="image/*">
+
     <div class="preview-strip" id="previewStrip">
       <img class="preview-thumb" id="previewThumb" src="" alt="Preview">
       <div class="preview-info">
@@ -389,11 +398,10 @@ footer span { color: var(--text); }
     <div class="error-box" id="errorBox"></div>
   </div>
 
-  <!-- Result Section -->
   <div class="result-section" id="resultSection">
     <div class="result-card" id="resultCard">
       <div class="result-header">
-        <img class="result-img" id="resultImg" src="" alt="Sky Data Grid">
+        <img class="result-img" id="resultImg" src="" alt="Sky Data">
         <div class="result-main">
           <span class="result-icon" id="resultIcon"></span>
           <div class="result-label" id="resultLabel"></div>
@@ -410,59 +418,56 @@ footer span { color: var(--text); }
   </div>
 
   <footer>
-    Core architecture powered by <span>YOLO </span>.<br>
+    Core architecture powered by <span>YOLO</span>.<br>
     Classes of target elements: Rain · Sunrise · Cloudy · Shine
   </footer>
 </div>
 
 <script>
-// ─── Status check ────────────────────────────────────────────────────────────
-const badge   = document.getElementById('statusBadge');
+const badge    = document.getElementById('statusBadge');
 const badgeTxt = document.getElementById('statusText');
 
-fetch('/status').then(r=>r.json()).then(d=>{
+fetch('/status').then(r => r.json()).then(d => {
   if (d.model_loaded) {
-    badgeTxt.textContent = `ONLINE // ${d.device?.toUpperCase()}`;
+    badgeTxt.textContent = `ONLINE // ${(d.device || 'CPU').toUpperCase()}`;
   } else {
     badge.className = 'status-badge fail';
     badgeTxt.textContent = 'OFFLINE';
   }
-}).catch(()=>{
+}).catch(() => {
   badge.className = 'status-badge fail';
   badgeTxt.textContent = 'SERVER ERR';
 });
 
-// ─── Fix Upload Bug & Event Handlers ─────────────────────────────────────────
-const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('file-input');
-const dummyBtn = document.getElementById('dummyBtn');
+const dropZone  = document.getElementById('dropZone');
 let selectedFile = null;
 
-// แก้ไขบั๊กกดปุ่มเลือกรูปภาพไม่ได้: ผูกตัว Trigger ไปที่ input file โดยตรงเมื่อกดกล่องหรือปุ่ม
-dropZone.addEventListener('click', (e) => {
-  // ป้องกันการยิงซ้ำซ้อนถ้าคลิกตรงปุ่มพอดี
-  if(e.target !== fileInput) {
-    fileInput.click();
-  }
+/* Drag & drop — ใช้ได้บน desktop */
+['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+}));
+['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+}));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  const files = e.dataTransfer?.files;
+  if (files && files[0]) handleFile(files[0]);
 });
 
-['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => {
-  ev.preventDefault(); dropZone.classList.add('drag-over');
-}));
-['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => {
-  ev.preventDefault(); dropZone.classList.remove('drag-over');
-}));
-dropZone.addEventListener('drop', ev => {
-  ev.preventDefault();
-  const files = ev.dataTransfer.files;
-  if (files[0]) handleFile(files[0]);
-});
+/* FIX: ใช้ change event บน input โดยตรง — ไม่ต้องมี click handler */
 fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) handleFile(fileInput.files[0]);
+  if (fileInput.files && fileInput.files[0]) handleFile(fileInput.files[0]);
 });
 
 function handleFile(file) {
-  if (!file.type.startsWith('image/')) { showError('Please upload an image file.'); return; }
+  if (!file.type.startsWith('image/')) {
+    showError('Please upload an image file (JPG, PNG, HEIC, etc.)');
+    return;
+  }
   selectedFile = file;
   hideError();
 
@@ -470,14 +475,13 @@ function handleFile(file) {
   reader.onload = e => {
     document.getElementById('previewThumb').src = e.target.result;
     document.getElementById('previewName').textContent = file.name;
-    document.getElementById('previewSize').textContent = (file.size/1024).toFixed(1) + ' KB';
+    document.getElementById('previewSize').textContent = (file.size / 1024).toFixed(1) + ' KB';
     document.getElementById('previewStrip').classList.add('visible');
     document.getElementById('resultSection').classList.remove('visible');
   };
   reader.readAsDataURL(file);
 }
 
-// ─── Analyze Execution ─────────────────────────────────────────────────────────
 const COLOR_MAP = {
   rain:    'var(--rain)',
   sunrise: 'var(--sunrise)',
@@ -509,17 +513,16 @@ async function analyze() {
 }
 
 function showResult(data) {
-  const p = data.prediction;
+  const p     = data.prediction;
   const color = COLOR_MAP[p.class] || 'var(--accent)';
 
-  document.getElementById('resultImg').src   = data.thumbnail;
+  document.getElementById('resultImg').src           = data.thumbnail;
   document.getElementById('resultIcon').textContent  = p.icon;
   document.getElementById('resultLabel').textContent = p.label.toUpperCase();
   document.getElementById('resultDesc').textContent  = p.desc;
   document.getElementById('resultConf').textContent  =
     `// ACCURACY RATIO: ${(p.probability * 100).toFixed(1)}%`;
 
-  // Probability bars
   const barsEl = document.getElementById('probBars');
   barsEl.innerHTML = '';
   data.all.forEach((item, i) => {
@@ -528,17 +531,16 @@ function showResult(data) {
     const row   = document.createElement('div');
     row.className = 'prob-row';
     row.innerHTML = `
-      <div class="prob-name ${isTop?'top':''}">${item.icon} ${item.label}</div>
+      <div class="prob-name ${isTop ? 'top' : ''}">${item.icon} ${item.label}</div>
       <div class="prob-track">
         <div class="prob-fill" style="background:${isTop ? color : 'var(--border)'};"
              data-w="${pct}"></div>
       </div>
-      <div class="prob-pct ${isTop?'top':''}">${pct}%</div>
+      <div class="prob-pct ${isTop ? 'top' : ''}">${pct}%</div>
     `;
     barsEl.appendChild(row);
   });
 
-  // Animate progress indicators
   requestAnimationFrame(() => requestAnimationFrame(() => {
     barsEl.querySelectorAll('.prob-fill').forEach(el => {
       el.style.width = el.dataset.w + '%';
@@ -553,7 +555,7 @@ function reset() {
   selectedFile = null;
   document.getElementById('previewStrip').classList.remove('visible');
   document.getElementById('resultSection').classList.remove('visible');
-  document.getElementById('file-input').value = '';
+  fileInput.value = '';
   hideError();
 }
 
