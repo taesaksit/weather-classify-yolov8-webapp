@@ -5,16 +5,6 @@ Hi you can train model following this my repo: https://github.com/taesaksit/weat
 
 ## 🖥️ Installation
 
-### Prerequisites
-
-| Tool | Minimum Version | Download |
-|------|----------------|----------|
-| Python | 3.9+ | https://python.org |
-| pip | latest | bundled with Python |
-| Git | any | https://git-scm.com |
-
----
-
 ### Step 1 — Clone the repository
 
 ```bash
