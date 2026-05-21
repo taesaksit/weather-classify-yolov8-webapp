@@ -36,8 +36,6 @@ ENV/
 # Dataset & Large ML Models (ห้าม push ไฟล์โมเดลหรือรูปภาพขนาดใหญ่ขึ้น GitHub)
 *.h5
 *.pth
-*.pt
-*.onnx
 *.pkl
 dataset/
 data/
