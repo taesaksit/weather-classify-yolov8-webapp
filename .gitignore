@@ -1,59 +1,15 @@
 # ====================================================================
-# 1. OS & System Files (ไฟล์ขยะของระบบปฏิบัติการ)
+# SkyLens — Root Git Ignore
 # ====================================================================
+
+# OS & System Files
 .DS_Store
 .DS_Store?
 ._*
 Thumbs.db
 desktop.ini
 
-# ====================================================================
-# 2. Frontend / Node / Static Site Build (ฝั่งเว็บและโมดูล)
-# ====================================================================
-node_modules/
-/dist/
-/out/
-/build/
-.pnpm-store/
-.yarn/
-
-# ====================================================================
-# 3. Python / Machine Learning (ฝั่งเทรนโมเดล AI)
-# ====================================================================
-# โฟลเดอร์จำลองสภาพแวดล้อม (Virtual Environments)
-venv/
-.venv/
-env/
-.env/
-ENV/
-
-# Python artifacts
-**/__pycache__/
-*.py[cod]
-*$py.class
-.ipynb_checkpoints/
-
-# Dataset & Large ML Models (ห้าม push ไฟล์โมเดลหรือรูปภาพขนาดใหญ่ขึ้น GitHub)
-*.h5
-*.pth
-*.pkl
-dataset/
-data/
-
-# ====================================================================
-# 4. Security & Environment Variables (ความปลอดภัย - ห้ามอัปโหลดเด็ดขาด)
-# ====================================================================
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*.pem
-*.key
-
-# ====================================================================
-# 5. IDEs & Editors (ไฟล์ตั้งค่าส่วนตัวของโปรแกรมเขียนโค้ด)
-# ====================================================================
+# IDEs & Editors
 .vscode/
 .idea/
 *.suo
@@ -61,3 +17,27 @@ data/
 *.njsproj
 *.sln
 *.swp
+
+# React / Node (Subfolder)
+react/node_modules/
+react/dist/
+react/dist-ssr/
+react/*.local
+
+# Flask / Python (Subfolder)
+flask/venv/
+flask/.venv/
+flask/env/
+flask/.env/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Large Machine Learning Models (Optional: ignore original models if redundant)
+# flask/static/*.pt
+# flask/static/*.onnx
+
+# Build artifacts
+dist/
+build/
+out/
